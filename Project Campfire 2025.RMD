@@ -222,7 +222,7 @@ COLS_TO_DROP <- c("StartDate", "EndDate", "Status", "IPAddress", "Progress", "Du
 
 CAMPFIRE_POST_CLEANED <- CAMPFIRE_POST_CLEANED[,-which(names(CAMPFIRE_POST_CLEANED) %in% COLS_TO_DROP)]
 
-PRE_SUMMERS <- paste(Name_1, Name_2, sep = "")
+PRE_SUMMERS <- paste(CAMPFIRE_PRE_CLEANED$Name_1, CAMPFIRE_PRE_CLEANED$Name_2, sep = "")
 
 POST_SUMMERS <- CAMPFIRE_POST_CLEANED[which(!paste(CAMPFIRE_POST_CLEANED$Name_1, CAMPFIRE_POST_CLEANED$Name_2, sep = "") %in% PRE_SUMMERS),]
 
@@ -268,6 +268,17 @@ noquote(paste0(round(prop.table(gender_counts) * 100, 1),  '%')) # Prints % by g
 
 ```
 
+#### Combined Unique
+
+```{r gender_analysis_combined}
+
+gender_counts <- table(ALL_UNIQUE_CLEANED$Gender)
+
+print(gender_counts) # Prints counts by gender
+
+noquote(paste0(round(prop.table(gender_counts) * 100, 1),  '%')) # Prints % by gender
+
+```
 ### Grade Counts and Percentages
 
 #### Baseline
