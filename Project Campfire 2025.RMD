@@ -222,6 +222,16 @@ COLS_TO_DROP <- c("StartDate", "EndDate", "Status", "IPAddress", "Progress", "Du
 
 CAMPFIRE_POST_CLEANED <- CAMPFIRE_POST_CLEANED[,-which(names(CAMPFIRE_POST_CLEANED) %in% COLS_TO_DROP)]
 
+PRE_SUMMERS <- paste(Name_1, Name_2, sep = "")
+
+POST_SUMMERS <- CAMPFIRE_POST_CLEANED[which(!paste(CAMPFIRE_POST_CLEANED$Name_1, CAMPFIRE_POST_CLEANED$Name_2, sep = "") %in% PRE_SUMMERS),]
+
+POST_SUMMERS <- POST_SUMMERS[,-(which(names(POST_SUMMERS) %in% c("Return")))]
+
+PRE_SUMMERS <- CAMPFIRE_PRE_CLEANED[-(which(names(CAMPFIRE_PRE_CLEANED) %in% c("Donation_Memory")))]
+
+ALL_UNIQUE_CLEANED <- rbind(PRE_SUMMERS,POST_SUMMERS)
+
 ```
 
 ```{r data_analysis}
@@ -287,15 +297,6 @@ noquote(paste0(round(prop.table(grade_counts) * 100, 1), '%')) # Prints % by sch
 ### Prior Camp Attendance Counts and Percentages
 
 ```{r attendance_analysis}
-
-PRE_SUMMERS <- paste()
-
-
-attendance <- rbind()
-
-
-
-
 
 
 
