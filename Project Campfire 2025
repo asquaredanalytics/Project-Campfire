@@ -1,0 +1,680 @@
+---
+title: "Project Campfire 2025 Quant Analysis"
+author: "Garrett Jenkins"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE)
+library(janitor)
+```
+
+```{r data_loading}
+
+#CAMPFIRE_PRE <- read.csv("C:/Users/Garre/OneDrive/A Squared Analytics/Third Plateau/Campfire_Pre_Values.csv")
+
+CAMPFIRE_PRE <- read.csv("C:/Users/Garre/OneDrive/A Squared Analytics/Third Plateau/Campfire_Pre_Labels.csv")
+
+CAMPFIRE_POST <- read.csv("C:/Users/Garre/OneDrive/A Squared Analytics/Third Plateau/Endline.csv")
+
+LABELS <- read.csv("C:/Users/Garre/OneDrive/A Squared Analytics/Third Plateau/Campfire_Pre_Labels.csv")
+
+```
+
+```{r pre_data_cleaning}
+
+CAMPFIRE_PRE <- CAMPFIRE_PRE[-c(1:2),]
+
+CAMPFIRE_PRE <- CAMPFIRE_PRE[order(CAMPFIRE_PRE$Name_2),]  ### Reviewed names visually and identified no duplicates
+
+CAMPFIRE_PRE_CONSENT_FINISHED <- CAMPFIRE_PRE[-(which(CAMPFIRE_PRE$Consent != "Yes" | CAMPFIRE_PRE$Finished != "True")),]  ### Removed rows which did not have an affirmative consent value
+
+CAMPFIRE_PRE_CONSENT_FINISHED[CAMPFIRE_PRE_CONSENT_FINISHED == ""] <- NA
+
+CF_SUB_1 <- CAMPFIRE_PRE_CONSENT_FINISHED[which(CAMPFIRE_PRE_CONSENT_FINISHED$First.Time_10.12 != ""), ]
+
+CF_SUB_2 <- CAMPFIRE_PRE_CONSENT_FINISHED[which(CAMPFIRE_PRE_CONSENT_FINISHED$First.Time.7.9 != ""), ]
+
+CF_SUB_3 <- CAMPFIRE_PRE_CONSENT_FINISHED[which(CAMPFIRE_PRE_CONSENT_FINISHED$First.Time_3.6 != ""), ]
+
+na_columns_1 <- names(CF_SUB_1)[colSums(is.na(CF_SUB_1)) == nrow(CF_SUB_1)]
+
+na_columns_2 <- names(CF_SUB_2)[colSums(is.na(CF_SUB_2)) == nrow(CF_SUB_2)]
+
+na_columns_3 <- names(CF_SUB_3)[colSums(is.na(CF_SUB_3)) == nrow(CF_SUB_3)]
+
+CF_SUB_1 <- CF_SUB_1[,-which(names(CF_SUB_1) %in% na_columns_1)]
+
+CF_SUB_2 <- CF_SUB_2[,-which(names(CF_SUB_2) %in% na_columns_2)]
+
+CF_SUB_3 <- CF_SUB_3[,-which(names(CF_SUB_3) %in% na_columns_3)]
+
+SUB_1_NAMES <- names(CF_SUB_1)
+
+SUB_2_NAMES <- names(CF_SUB_2)
+
+SUB_3_NAMES <- names(CF_SUB_3)
+
+NAME_COMPS <- as.data.frame(cbind(SUB_1_NAMES, SUB_2_NAMES, SUB_3_NAMES))
+
+NEW_COL_NAMES <- c(
+                  'StartDate',
+                  'EndDate',
+                  'Status',
+                  'IPAddress',
+                  'Progress',
+                  'Duration_Seconds',
+                  'Finished',
+                  'RecordedDate',
+                  'ResponseId',
+                  'LocationLatitude',
+                  'LocationLongitude',
+                  'DistributionChannel',
+                  'UserLanguage',
+                  'Q_RecaptchaScore',
+                  'Q_RelevantIDDuplicate',
+                  'Q_DuplicateRespondent',
+                  'Q_RelevantIDDuplicateScore',
+                  'Q_RelevantIDFraudScore',
+                  'Q_RelevantIDLastStartDate',
+                  'Consent',
+                  'Name_1',
+                  'Name_2',
+                  'Gender',
+                  'Attendance',
+                  'First_Time',
+                  'Summers',
+                  'Activities',
+                  'Activities_Text',
+                  'Heritage',
+                  'Belonging_Belonging',
+                  'Belonging_Matter',
+                  'Belonging_Included',
+                  'Included',
+                  'Joyful_Joyful',
+                  'Joyful_Welcoming',
+                  'Happy',
+                  'Friendship',
+                  'Connected',
+                  'Post_Camp',
+                  'Pathway',
+                  'Giveaway_Name',
+                  'Giveaway_Type',
+                  'Donation_Memory',
+                  'Donation_Memory_Text'
+                )
+
+names(CF_SUB_1) <- NEW_COL_NAMES
+
+names(CF_SUB_2) <- NEW_COL_NAMES
+
+names(CF_SUB_3) <- NEW_COL_NAMES
+
+CAMPFIRE_PRE_CLEANED <- rbind(CF_SUB_1, CF_SUB_2, CF_SUB_3)
+
+COLS_TO_DROP <- c("StartDate", "EndDate", "Status", "IPAddress", "Progress", "Duration_Seconds", "Finished", "RecordedDate",
+                  "ResponseId", "LocationLatitude", "LocationLongitude", "DistributionChannel", "UserLanguage",
+                  "Q_RecaptchaScore", "Q_RelevantIDDuplicate", "Q_DuplicateRespondent", "Q_RelevantIDDuplicateScore",
+                  "Q_RelevantIDFraudScore", "Q_RelevantIDLastStartDate", "Consent", "Giveaway_Name",
+                  "Donation_Memory_Text")
+
+CAMPFIRE_PRE_CLEANED <- CAMPFIRE_PRE_CLEANED[,-which(names(CAMPFIRE_PRE_CLEANED) %in% COLS_TO_DROP)]
+
+```
+
+```{r post_data_cleaning}
+
+CAMPFIRE_POST <- CAMPFIRE_POST[-c(1:2),]
+
+CAMPFIRE_POST <- CAMPFIRE_POST[order(CAMPFIRE_POST$Name_2),]  ### Reviewed names visually and identified no duplicates
+
+CAMPFIRE_POST_CONSENT_FINISHED <- CAMPFIRE_POST[-(which(CAMPFIRE_POST$Consent != "Yes" | CAMPFIRE_POST$Finished != "True")),]  ### Removed rows which did not have an affirmative consent value
+
+CAMPFIRE_POST_CONSENT_FINISHED[CAMPFIRE_POST_CONSENT_FINISHED == ""] <- NA
+
+CF_SUB_1 <- CAMPFIRE_POST_CONSENT_FINISHED[which(CAMPFIRE_POST_CONSENT_FINISHED$First.Time_10.12 != ""), ]
+
+CF_SUB_2 <- CAMPFIRE_POST_CONSENT_FINISHED[which(CAMPFIRE_POST_CONSENT_FINISHED$First.Time.7.9 != ""), ]
+
+CF_SUB_3 <- CAMPFIRE_POST_CONSENT_FINISHED[which(CAMPFIRE_POST_CONSENT_FINISHED$First.Time_3.6 != ""), ]
+
+na_columns_1 <- names(CF_SUB_1)[colSums(is.na(CF_SUB_1)) == nrow(CF_SUB_1)]
+
+na_columns_2 <- names(CF_SUB_2)[colSums(is.na(CF_SUB_2)) == nrow(CF_SUB_2)]
+
+na_columns_3 <- names(CF_SUB_3)[colSums(is.na(CF_SUB_3)) == nrow(CF_SUB_3)]
+
+CF_SUB_1 <- CF_SUB_1[,-which(names(CF_SUB_1) %in% na_columns_1)]
+
+CF_SUB_2 <- CF_SUB_2[,-which(names(CF_SUB_2) %in% na_columns_2)]
+
+CF_SUB_3 <- CF_SUB_3[,-which(names(CF_SUB_3) %in% na_columns_3)]
+
+SUB_1_NAMES <- names(CF_SUB_1)
+
+SUB_2_NAMES <- names(CF_SUB_2)
+
+SUB_3_NAMES <- names(CF_SUB_3)
+
+NAME_COMPS <- as.data.frame(cbind(SUB_1_NAMES, SUB_2_NAMES, SUB_3_NAMES))
+
+CF_SUB_1 <- CF_SUB_1[,-(which(names(CF_SUB_1) %in% c("Q1", "Donation_Memory", "Donation_Memory_1_TEXT", "StartDate", "EndDate")))]
+
+CF_SUB_2 <- CF_SUB_2[,-(which(names(CF_SUB_2) %in% c("Gender_5_TEXT", "StartDate", "EndDate")))]
+
+CF_SUB_3 <- CF_SUB_3[,-(which(names(CF_SUB_3) %in% c("Donation_Memory", "StartDate", "EndDate")))]
+
+NEW_COL_NAMES <- c(
+                  'Status',
+                  'IPAddress',
+                  'Progress',
+                  'Duration_Seconds',
+                  'Finished',
+                  'RecordedDate',
+                  'ResponseId',
+                  'LocationLatitude',
+                  'LocationLongitude',
+                  'DistributionChannel',
+                  'UserLanguage',
+                  'Q_RecaptchaScore',
+                  'Q_RelevantIDDuplicate',
+                  'Q_RelevantIDFraudScore',
+                  'Consent',
+                  'Name_1',
+                  'Name_2',
+                  'Gender',
+                  'Attendance',
+                  'First_Time',
+                  'Summers',
+                  'Activities',
+                  'Activities_Text',
+                  'Heritage',
+                  'Belonging_Belonging',
+                  'Belonging_Matter',
+                  'Belonging_Included',
+                  'Included',
+                  'Return',
+                  'Joyful_Joyful',
+                  'Joyful_Welcoming',
+                  'Happy',
+                  'Friendship',
+                  'Connected',
+                  'Post_Camp',
+                  'Pathway',
+                  'Giveaway_Name',
+                  'Giveaway_Type'
+                )
+
+names(CF_SUB_1) <- NEW_COL_NAMES
+
+names(CF_SUB_2) <- NEW_COL_NAMES
+
+names(CF_SUB_3) <- NEW_COL_NAMES
+
+CAMPFIRE_POST_CLEANED <- rbind(CF_SUB_1, CF_SUB_2, CF_SUB_3)
+
+COLS_TO_DROP <- c("StartDate", "EndDate", "Status", "IPAddress", "Progress", "Duration_Seconds", "Finished", "RecordedDate",
+                  "ResponseId", "LocationLatitude", "LocationLongitude", "DistributionChannel", "UserLanguage",
+                  "Q_RecaptchaScore", "Q_RelevantIDDuplicate", "Q_DuplicateRespondent", "Q_RelevantIDDuplicateScore",
+                  "Q_RelevantIDFraudScore", "Q_RelevantIDLastStartDate", "Consent", "Giveaway_Name",
+                  "Donation_Memory_Text")
+
+CAMPFIRE_POST_CLEANED <- CAMPFIRE_POST_CLEANED[,-which(names(CAMPFIRE_POST_CLEANED) %in% COLS_TO_DROP)]
+
+```
+
+```{r data_analysis}
+
+attach(CAMPFIRE_PRE_CLEANED)
+
+```
+
+<h1 align="center" id="heading"><b>Introduction Section</b></h1>
+
+### Gender Counts and Percentages
+
+#### Baseline
+
+```{r gender_analysis_pre}
+
+gender_counts <- table(Gender)
+
+print(gender_counts) # Prints counts by gender
+
+noquote(paste0(round(prop.table(gender_counts) * 100, 1),  '%')) # Prints % by gender
+
+```
+
+#### Endline
+
+```{r gender_analysis_post}
+
+gender_counts <- table(CAMPFIRE_POST_CLEANED$Gender)
+
+print(gender_counts) # Prints counts by gender
+
+noquote(paste0(round(prop.table(gender_counts) * 100, 1),  '%')) # Prints % by gender
+
+```
+
+### Grade Counts and Percentages
+
+#### Baseline
+
+```{r grade_analysis_pre}
+
+grade_counts <- table(Attendance) 
+
+print(grade_counts) # Prints counts by school grade
+
+noquote(paste0(round(prop.table(grade_counts) * 100, 1), '%')) # Prints % by school grade
+
+```
+
+```{r grade_analysis_post}
+
+grade_counts <- table(CAMPFIRE_POST_CLEANED$Attendance) 
+
+print(grade_counts) # Prints counts by school grade
+
+noquote(paste0(round(prop.table(grade_counts) * 100, 1), '%')) # Prints % by school grade
+
+```
+
+#### Endline
+
+### Prior Camp Attendance Counts and Percentages
+
+```{r attendance_analysis}
+
+PRE_SUMMERS <- paste()
+
+
+attendance <- rbind()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+camp_before <- table(First_Time)
+
+print(camp_before) # Prints counts by prior camp experience
+
+noquote(paste0(round(prop.table(camp_before) * 100, 1), '%')) # Prints % by prior camp experience
+
+```
+
+#### Average # of Summers Previously Attended, for Those With Previous Experience
+
+```{r attendance_analysis_avg_summers}
+
+noquote(paste0(round(mean(as.numeric(substr(Summers,1,1)), na.rm = T), 1), " summers on average")) # For those who attended camp previously, returns the average number of summers
+
+```
+<h2 align="center" id="heading"><b>In the last year I...</b></h2>
+### Attended Synagogue
+
+```{r activities_analysis_synagoge}
+
+Activities_List <- as.data.frame(table(unlist(strsplit(Activities, ",(?!\\s)", perl = TRUE))))
+
+Attendance <- sum(Activities_List$Freq[grep("synagogue", Activities_List$Var1)])
+
+Attendance_Perc = Attendance/47
+
+print(Attendance)
+
+noquote(paste0(round(Attendance_Perc * 100, 2), '%'))
+
+```
+
+### Participated in a Jewish Leadership Experience
+
+```{r activities_analysis_leadership}
+
+Activities_Cnt <- sum(Activities_List$Freq[grep("lead", Activities_List$Var1)])
+
+Activities_Pct = Activities_Cnt/47
+
+print(Activities_Cnt)
+
+noquote(paste0(round(Activities_Pct * 100, 2), '%'))
+
+```
+
+### Celebrated Jewish Holidays
+
+```{r activities_analysis_holidays}
+
+Holiday_Cnt <- sum(Activities_List$Freq[grep("holidays", Activities_List$Var1)])
+
+Holiday_Pct = Holiday_Cnt/47
+
+print(Holiday_Cnt)
+
+noquote(paste0(round(Holiday_Pct * 100, 2), '%'))
+
+```
+
+### Celebrated Shabbat
+
+``` {r activities_analysis_shabbat}
+
+Shabbat_Cnt <- sum(Activities_List$Freq[grep("Shabbat", Activities_List$Var1)])
+
+Shabbat_Pct = Shabbat_Cnt/47
+
+print(Shabbat_Cnt)
+
+noquote(paste0(round(Shabbat_Pct * 100, 2), '%'))
+
+
+```
+
+### Volunteered With a Jewish Organization
+
+``` {r activities_analysis_volunteer}
+
+Volunteer_Cnt <- sum(Activities_List$Freq[grep("volunteer", Activities_List$Var1)])
+
+Volunteer_Pct = Volunteer_Cnt/47
+
+print(Volunteer_Cnt)
+
+noquote(paste0(round(Volunteer_Pct * 100, 2), '%'))
+
+
+```
+
+### Participated in a Club
+
+``` {r activities_analysis_club}
+
+Club_Cnt <- sum(sum(Activities_List$Freq[grep("club", Activities_List$Var1)]),sum(Activities_List$Freq[grep("BBYO", Activities_List$Var1)]))
+
+Club_Pct = Club_Cnt/47
+
+print(Club_Cnt)
+
+noquote(paste0(round(Club_Pct * 100, 2), '%'))
+
+```
+
+### Participated in Jewish Learning
+
+``` {r activities_analysis_learning}
+
+Learning_Cnt <- sum(Activities_List$Freq[grep("Hebrew", Activities_List$Var1)])
+
+Learning_Pct = Learning_Cnt/47
+
+print(Learning_Cnt)
+
+noquote(paste0(round(Learning_Pct * 100, 2), '%'))
+
+```
+### Read About Jewish or Israeli Topics
+
+``` {r activities_analysis_Israeli}
+
+Israeli_Cnt <- sum(Activities_List$Freq[grep("Israeli", Activities_List$Var1)])
+
+Israeli_Pct = Israeli_Cnt/47
+
+print(Israeli_Cnt)
+
+noquote(paste0(round(Israeli_Pct * 100, 2), '%'))
+
+```
+
+### No Jewish Activities Currently or in Last Year
+
+``` {r activities_analysis_no_participation}
+
+Activity_Cnt <- sum(sum(Activities_List$Freq[grep("I haven't", Activities_List$Var1)]),sum(Activities_List$Freq[grep("I am not", Activities_List$Var1)]))
+
+Activity_Pct = Activity_Cnt/47
+
+print(Activity_Cnt)
+
+noquote(paste0(round(Activity_Pct * 100, 2), '%'))
+
+```
+### Did Something Else
+
+``` {r activities_analysis_other}
+
+Other_Cnt <- sum(sum(Activities_List$Freq[grep("Something else", Activities_List$Var1)]),sum(Activities_List$Freq[grep("Other", Activities_List$Var1)]))
+
+Other_Pct = Other_Cnt/47
+
+print(Other_Cnt)
+
+noquote(paste0(round(Other_Pct * 100, 2), '%'))
+
+```
+
+<h1 align="center" id="heading"><b>Outcome One</b></h1>
+
+<h3 align = "center" id="heading"><b>Participants form lasting connections with Jewish peers and feel a sense of belonging within a Jewish community</b></h3>
+
+### How much do you agree with this statement: “I expect to feel like I belong at camp.”
+
+``` {r Outcome_1_belong}
+
+# Recoding the language used for the grades 3 - 6 survey to be consistent with the language used for grades 4 - 12 for reporting purposes. A note should be made of this in the report
+
+Belonging_Belonging <- ifelse(Belonging_Belonging == 'Yes, a lot', 'Strongly agree',
+                              ifelse(Belonging_Belonging == 'Yes, a little', 'Agree',
+                                     ifelse(Belonging_Belonging == 'Kind of', 'Neither agree nor disagree',
+                                            ifelse(Belonging_Belonging == 'Not really', 'Disagree',
+                                                   ifelse(Belonging_Belonging == 'No, not at all', 'Strongly disagree',
+                                                          Belonging_Belonging)))))
+
+Outcome1_Belonging <- tabyl(Belonging_Belonging)
+
+Outcome1_Belonging %>%
+  adorn_totals("row") %>%
+    adorn_pct_formatting()
+
+```
+
+### How much do you agree with this statement: “I expect to feel like I matter at camp.”
+
+``` {r Outcome_1_matter}
+
+# Recoding the language used for the grades 3 - 6 survey to be consistent with the language used for grades 4 - 12 for reporting purposes. A note should be made of this in the report
+
+Belonging_Included <- ifelse(Belonging_Included == 'Yes, a lot', 'Strongly agree',
+                              ifelse(Belonging_Included == 'Yes, a little', 'Agree',
+                                     ifelse(Belonging_Included == 'Kind of', 'Neither agree nor disagree',
+                                            ifelse(Belonging_Included == 'Not really', 'Disagree',
+                                                   ifelse(Belonging_Included == 'No, not at all', 'Strongly disagree',
+                                                          Belonging_Included)))))
+
+Outcome1_Belonging <- tabyl(Belonging_Included)
+
+Outcome1_Belonging %>%
+  adorn_totals("row") %>%
+    adorn_pct_formatting()
+
+```
+
+### How much do you agree with this statement: “I expect to feel included at camp.”
+
+``` {r Outcome_1_included}
+
+# Recoding the language used for the grades 3 - 6 survey to be consistent with the language used for grades 4 - 12 for reporting purposes. A note should be made of this in the report
+
+Belonging_Matter <- ifelse(Belonging_Matter == 'Yes, a lot', 'Strongly agree',
+                              ifelse(Belonging_Matter == 'Yes, a little', 'Agree',
+                                     ifelse(Belonging_Matter == 'Kind of', 'Neither agree nor disagree',
+                                            ifelse(Belonging_Matter == 'Not really', 'Disagree',
+                                                   ifelse(Belonging_Matter == 'No, not at all', 'Strongly disagree',
+                                                          Belonging_Matter)))))
+
+Outcome1_Belonging <- tabyl(Belonging_Matter)
+
+Outcome1_Belonging %>%
+  adorn_totals("row") %>%
+    adorn_pct_formatting()
+
+```
+
+### What are you most excited about when it comes to being a part of the Camp Seneca Lake community?
+
+``` {r Outcome_1_excited_about}
+
+print(Included)
+
+```
+
+<h1 align="center" id="heading"><b>Outcome Two</b></h1>
+
+<h3 align = "center" id="heading"><b>Participants experience camp as a joyful, welcoming environment</b></h3>
+
+### How much do you agree with this statement: “I expect camp to feel joyful.”
+
+``` {r Outcome_2_joyful}
+
+# Recoding the language used for the grades 3 - 6 survey to be consistent with the language used for grades 4 - 12 for reporting purposes. A note should be made of this in the report
+
+Joyful_Joyful <- ifelse(Joyful_Joyful == 'Yes, a lot', 'Strongly agree',
+                              ifelse(Joyful_Joyful == 'Yes, a little', 'Agree',
+                                     ifelse(Joyful_Joyful == 'Kind of', 'Neither agree nor disagree',
+                                            ifelse(Joyful_Joyful == 'Not really', 'Disagree',
+                                                   ifelse(Joyful_Joyful == 'No, not at all', 'Strongly disagree',
+                                                          Joyful_Joyful)))))
+
+Outcome2_Joyful <- tabyl(Joyful_Joyful)
+
+Outcome2_Joyful %>%
+  adorn_totals("row") %>%
+    adorn_pct_formatting()
+
+```
+
+### How much do you agree with this statement: “I expect camp to feel welcoming.”
+
+``` {r Outcome_2_welcoming}
+
+# Recoding the language used for the grades 3 - 6 survey to be consistent with the language used for grades 4 - 12 for reporting purposes. A note should be made of this in the report
+
+Joyful_Welcoming <- ifelse(Joyful_Welcoming == 'Yes, a lot', 'Strongly agree',
+                              ifelse(Joyful_Welcoming == 'Yes, a little', 'Agree',
+                                     ifelse(Joyful_Welcoming == 'Kind of', 'Neither agree nor disagree',
+                                            ifelse(Joyful_Welcoming == 'Not really', 'Disagree',
+                                                   ifelse(Joyful_Welcoming == 'No, not at all', 'Strongly disagree',
+                                                          Joyful_Welcoming)))))
+
+Outcome2_Welcoming <- tabyl(Joyful_Welcoming)
+
+Outcome2_Welcoming %>%
+  adorn_totals("row") %>%
+    adorn_pct_formatting()
+
+```
+
+### What do you think camp can do to help you feel happy or part of the group this summer?
+
+``` {r Outcome_2_what}
+
+print(Happy)
+
+```
+
+<h1 align="center" id="heading"><b>Outcome Three</b></h1>
+
+<h3 align = "center" id="heading"><b>Participants develop meaningful relationships with their peers</b></h3>
+
+### How much do you agree with this statement: “I expect to form meaningful friendships at camp this summer.”
+
+```{r Outcome_3_friendships}
+
+# Recoding the language used for the grades 3 - 6 survey to be consistent with the language used for grades 4 - 12 for reporting purposes. A note should be made of this in the report
+
+Friendship <- ifelse(Friendship == 'Yes, a lot', 'Strongly agree',
+                              ifelse(Friendship == 'Yes, a littlie', 'Agree',
+                                     ifelse(Friendship == 'Kind of', 'Neither agree nor disagree',
+                                            ifelse(Friendship == 'Not really', 'Disagree',
+                                                   ifelse(Friendship == 'No, not at all', 'Strongly disagree',
+                                                          Friendship)))))
+
+Outcome3_Friendships <- tabyl(Friendship)
+
+Outcome3_Friendships %>%
+  adorn_totals("row") %>%
+    adorn_pct_formatting()
+
+```
+
+### In what ways, if any, do you expect Camp Seneca Lake will help you to strengthen your relationships with other campers?
+
+``` {r Outcome_3_connected}
+
+print(Connected)
+
+```
+
+<h1 align="center" id="heading"><b>Outcome Four</b></h1>
+
+<h3 align = "center" id="heading"><b>Families of participants become more integrated into Jewish life</b></h3>
+
+<h3 align = "center" id="heading"><i>(Endline Survey Only)</i></h3>
+
+
+
+<h1 align="center" id="heading"><b>Outcome Five</b></h1>
+
+<h3 align = "center" id="heading"><b>Participants feel more connected to the Jewish community</b></h3>
+
+### How much do you agree with this statement: “I expect that attending Camp Seneca Lake will strengthen my connection to the Jewish community.”
+
+```{r Outcome_5_connection}
+
+# Recoding the language used for the grades 3 - 6 survey to be consistent with the language used for grades 4 - 12 for reporting purposes. A note should be made of this in the report
+
+Post_Camp <- ifelse(Post_Camp == 'Yes, a lot', 'Strongly agree',
+                              ifelse(Post_Camp == 'Yes, a little', 'Agree',
+                                     ifelse(Post_Camp == 'Kind of', 'Neither agree nor disagree',
+                                            ifelse(Post_Camp == 'Not really', 'Disagree',
+                                                   ifelse(Post_Camp == 'No, not at all', 'Strongly disagree',
+                                                          Post_Camp)))))
+
+Outcome5_Post_Camp <- tabyl(Post_Camp)
+
+Outcome5_Post_Camp %>%
+  adorn_totals("row") %>%
+    adorn_pct_formatting()
+
+```
+
+```{r Outcome_5_pathways}
+
+print(Pathway)
+
+```
+
+<h1 align="center" id="heading"><b>Incentive Choice</b></h1>
+
+``` {r incentive_analysis}
+
+Incentive_Choice <- tabyl(Giveaway_Type)
+
+Incentive_Choice %>%
+  adorn_totals("row") %>%
+    adorn_pct_formatting()
+
+```
