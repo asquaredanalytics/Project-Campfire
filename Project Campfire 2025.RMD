@@ -222,6 +222,8 @@ COLS_TO_DROP <- c("StartDate", "EndDate", "Status", "IPAddress", "Progress", "Du
 
 CAMPFIRE_POST_CLEANED <- CAMPFIRE_POST_CLEANED[,-which(names(CAMPFIRE_POST_CLEANED) %in% COLS_TO_DROP)]
 
+CAMPFIRE_POST_CLEANED <- CAMPFIRE_POST_CLEANED[-which(toupper(CAMPFIRE_POST_CLEANED$Name_1) == "TEST" | toupper(CAMPFIRE_POST_CLEANED$Name_2) == "TEST"),]
+
 PRE_SUMMERS <- paste(CAMPFIRE_PRE_CLEANED$Name_1, CAMPFIRE_PRE_CLEANED$Name_2, sep = "")
 
 POST_SUMMERS <- CAMPFIRE_POST_CLEANED[which(!paste(CAMPFIRE_POST_CLEANED$Name_1, CAMPFIRE_POST_CLEANED$Name_2, sep = "") %in% PRE_SUMMERS),]
@@ -293,6 +295,8 @@ noquote(paste0(round(prop.table(grade_counts) * 100, 1), '%')) # Prints % by sch
 
 ```
 
+#### Endline
+
 ```{r grade_analysis_post}
 
 grade_counts <- table(CAMPFIRE_POST_CLEANED$Attendance) 
@@ -303,24 +307,23 @@ noquote(paste0(round(prop.table(grade_counts) * 100, 1), '%')) # Prints % by sch
 
 ```
 
-#### Endline
+#### Combined Unique
+
+```{r grade_analysis_combined}
+
+grade_counts <- table(CAMPFIRE_POST_CLEANED$Attendance) 
+
+print(grade_counts) # Prints counts by school grade
+
+noquote(paste0(round(prop.table(grade_counts) * 100, 1), '%')) # Prints % by school grade
+
+```
 
 ### Prior Camp Attendance Counts and Percentages
 
 ```{r attendance_analysis}
 
-
-
-
-
-
-
-
-
-
-
-
-camp_before <- table(First_Time)
+camp_before <- table(ALL_UNIQUE_CLEANED$First_Time)
 
 print(camp_before) # Prints counts by prior camp experience
 
@@ -332,19 +335,20 @@ noquote(paste0(round(prop.table(camp_before) * 100, 1), '%')) # Prints % by prio
 
 ```{r attendance_analysis_avg_summers}
 
-noquote(paste0(round(mean(as.numeric(substr(Summers,1,1)), na.rm = T), 1), " summers on average")) # For those who attended camp previously, returns the average number of summers
+noquote(paste0(round(mean(as.numeric(substr(ALL_UNIQUE_CLEANED$Summers,1,1)), na.rm = T), 1), " summers on average")) # For those who attended camp previously, returns the average number of summers
 
 ```
+
 <h2 align="center" id="heading"><b>In the last year I...</b></h2>
 ### Attended Synagogue
 
 ```{r activities_analysis_synagoge}
 
-Activities_List <- as.data.frame(table(unlist(strsplit(Activities, ",(?!\\s)", perl = TRUE))))
+Activities_List <- as.data.frame(table(unlist(strsplit(ALL_UNIQUE_CLEANED$Activities, ",(?!\\s)", perl = TRUE))))
 
 Attendance <- sum(Activities_List$Freq[grep("synagogue", Activities_List$Var1)])
 
-Attendance_Perc = Attendance/47
+Attendance_Perc = Attendance/nrow(ALL_UNIQUE_CLEANED)
 
 print(Attendance)
 
@@ -358,7 +362,7 @@ noquote(paste0(round(Attendance_Perc * 100, 2), '%'))
 
 Activities_Cnt <- sum(Activities_List$Freq[grep("lead", Activities_List$Var1)])
 
-Activities_Pct = Activities_Cnt/47
+Activities_Pct = Activities_Cnt/nrow(ALL_UNIQUE_CLEANED)
 
 print(Activities_Cnt)
 
@@ -372,7 +376,7 @@ noquote(paste0(round(Activities_Pct * 100, 2), '%'))
 
 Holiday_Cnt <- sum(Activities_List$Freq[grep("holidays", Activities_List$Var1)])
 
-Holiday_Pct = Holiday_Cnt/47
+Holiday_Pct = Holiday_Cnt/nrow(ALL_UNIQUE_CLEANED)
 
 print(Holiday_Cnt)
 
@@ -386,7 +390,7 @@ noquote(paste0(round(Holiday_Pct * 100, 2), '%'))
 
 Shabbat_Cnt <- sum(Activities_List$Freq[grep("Shabbat", Activities_List$Var1)])
 
-Shabbat_Pct = Shabbat_Cnt/47
+Shabbat_Pct = Shabbat_Cnt/nrow(ALL_UNIQUE_CLEANED)
 
 print(Shabbat_Cnt)
 
@@ -401,7 +405,7 @@ noquote(paste0(round(Shabbat_Pct * 100, 2), '%'))
 
 Volunteer_Cnt <- sum(Activities_List$Freq[grep("volunteer", Activities_List$Var1)])
 
-Volunteer_Pct = Volunteer_Cnt/47
+Volunteer_Pct = Volunteer_Cnt/nrow(ALL_UNIQUE_CLEANED)
 
 print(Volunteer_Cnt)
 
@@ -416,7 +420,7 @@ noquote(paste0(round(Volunteer_Pct * 100, 2), '%'))
 
 Club_Cnt <- sum(sum(Activities_List$Freq[grep("club", Activities_List$Var1)]),sum(Activities_List$Freq[grep("BBYO", Activities_List$Var1)]))
 
-Club_Pct = Club_Cnt/47
+Club_Pct = Club_Cnt/nrow(ALL_UNIQUE_CLEANED)
 
 print(Club_Cnt)
 
@@ -430,7 +434,7 @@ noquote(paste0(round(Club_Pct * 100, 2), '%'))
 
 Learning_Cnt <- sum(Activities_List$Freq[grep("Hebrew", Activities_List$Var1)])
 
-Learning_Pct = Learning_Cnt/47
+Learning_Pct = Learning_Cnt/nrow(ALL_UNIQUE_CLEANED)
 
 print(Learning_Cnt)
 
@@ -443,7 +447,7 @@ noquote(paste0(round(Learning_Pct * 100, 2), '%'))
 
 Israeli_Cnt <- sum(Activities_List$Freq[grep("Israeli", Activities_List$Var1)])
 
-Israeli_Pct = Israeli_Cnt/47
+Israeli_Pct = Israeli_Cnt/nrow(ALL_UNIQUE_CLEANED)
 
 print(Israeli_Cnt)
 
@@ -457,20 +461,21 @@ noquote(paste0(round(Israeli_Pct * 100, 2), '%'))
 
 Activity_Cnt <- sum(sum(Activities_List$Freq[grep("I haven't", Activities_List$Var1)]),sum(Activities_List$Freq[grep("I am not", Activities_List$Var1)]))
 
-Activity_Pct = Activity_Cnt/47
+Activity_Pct = Activity_Cnt/nrow(ALL_UNIQUE_CLEANED)
 
 print(Activity_Cnt)
 
 noquote(paste0(round(Activity_Pct * 100, 2), '%'))
 
 ```
+
 ### Did Something Else
 
 ``` {r activities_analysis_other}
 
 Other_Cnt <- sum(sum(Activities_List$Freq[grep("Something else", Activities_List$Var1)]),sum(Activities_List$Freq[grep("Other", Activities_List$Var1)]))
 
-Other_Pct = Other_Cnt/47
+Other_Pct = Other_Cnt/nrow(ALL_UNIQUE_CLEANED)
 
 print(Other_Cnt)
 
